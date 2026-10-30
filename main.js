@@ -186,12 +186,12 @@
     e.preventDefault();
     const ideia = $('#ideia').value.trim();
     const lines = [
-      'Oi Ricardo! Quero um orçamento de tattoo.',
+      'Olá, Ricardo! Gostaria de solicitar um orçamento de tatuagem.',
       `Estilo: ${val('estilo')}`,
-      `Lugar: ${val('local')}`,
-      `Tamanho: uns ${cm.value} cm`,
+      `Região do corpo: ${val('local')}`,
+      `Tamanho aproximado: ${cm.value} cm`,
       ideia ? `Ideia: ${ideia}` : '',
-      $('#corte').checked ? 'Quero aproveitar e cortar o cabelo no mesmo dia.' : ''
+      $('#corte').checked ? 'Também gostaria de cortar o cabelo no mesmo dia.' : ''
     ].filter(Boolean);
     window.open(WA + encodeURIComponent(lines.join('\n')), '_blank', 'noopener');
   });
