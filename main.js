@@ -55,19 +55,25 @@
 
   /* hero no celular: um vídeo por vez, em rodízio */
   const cols = $$('.hero__col');
-  let cur = 0, timer;
+  let cur = 0, timer = null;
   const showCol = i => {
     cols.forEach((c, k) => {
       const v = $('video', c);
       c.classList.toggle('is-on', k === i);
-      if (k === i) { load(v); v.currentTime = 0; v.play().catch(() => {}); } else v.pause();
+      if (k === i) { v.currentTime = 0; v.play().catch(() => {}); } else v.pause();
     });
   };
+  /* só reinicia quando muda de modo: no iPhone a barra de endereço dispara resize ao rolar */
   const mobileHero = () => {
-    clearInterval(timer);
-    if (!isMobile()) { cols.forEach(c => c.classList.remove('is-on')); return; }
+    if (!isMobile()) {
+      clearInterval(timer); timer = null;
+      cols.forEach(c => c.classList.remove('is-on'));
+      return;
+    }
+    if (timer) return;
+    cols.forEach(c => { c.style.transform = ''; load($('video', c)); });
     showCol(cur);
-    timer = setInterval(() => { cur = (cur + 1) % cols.length; showCol(cur); }, 5500);
+    timer = setInterval(() => { cur = (cur + 1) % cols.length; showCol(cur); }, 4000);
   };
   mobileHero();
 
