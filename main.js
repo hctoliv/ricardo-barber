@@ -202,5 +202,61 @@
     window.open(WA + encodeURIComponent(lines.join('\n')), '_blank', 'noopener');
   });
 
+  /* reels do Instagram: lê reels/reels.json quando a seção chega perto da tela */
+  const igr = $('#reels');
+  if (igr) {
+    const row = $('#igrRow'), modal = $('#igrModal'), frame = $('#igrFrame');
+    const prev = $('#igrPrev'), next = $('#igrNext');
+    const fmt = n => n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace('.', ',') + ' mil' : String(n);
+    const quando = d => {
+      const dias = Math.round((Date.now() - new Date(d + 'T12:00:00')) / 864e5);
+      if (dias <= 0) return 'hoje';
+      if (dias === 1) return 'ontem';
+      if (dias < 30) return `há ${dias} dias`;
+      const m = Math.round(dias / 30);
+      return m < 12 ? `há ${m} ${m > 1 ? 'meses' : 'mês'}` : `há ${Math.round(m / 12)} ano${m >= 24 ? 's' : ''}`;
+    };
+    const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const arrows = () => {
+      prev.disabled = row.scrollLeft < 8;
+      next.disabled = row.scrollLeft + row.clientWidth > row.scrollWidth - 8;
+    };
+    const step = dir => row.scrollBy({ left: dir * row.clientWidth * .8, behavior: reduce ? 'auto' : 'smooth' });
+    prev.addEventListener('click', () => step(-1));
+    next.addEventListener('click', () => step(1));
+    row.addEventListener('scroll', arrows, { passive: true });
+
+    const abrir = r => {
+      if (!modal.showModal) { window.open(r.url, '_blank', 'noopener'); return; }
+      frame.innerHTML = `<iframe src="https://www.instagram.com/reel/${encodeURIComponent(r.code)}/embed/" title="Reel do Instagram" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+      $('#igrOpen').href = r.url;
+      modal.showModal();
+      document.body.style.overflow = 'hidden';
+    };
+    const fechar = () => modal.close();
+    modal.addEventListener('close', () => { frame.innerHTML = ''; document.body.style.overflow = ''; });
+    $('#igrClose').addEventListener('click', fechar);
+    modal.addEventListener('click', e => { if (e.target === modal) fechar(); });
+
+    const render = data => {
+      const reels = (data.reels || []).slice(0, 12);
+      if (!reels.length) { igr.hidden = true; return; }
+      row.innerHTML = reels.map((r, i) => `<li><button class="igr__card" type="button" data-i="${i}" aria-label="Assistir reel${r.legenda ? ': ' + esc(r.legenda) : ''}">
+        <span class="igr__cover"><img src="${esc(r.capa)}" width="360" height="640" alt="" loading="lazy" decoding="async"><span class="igr__play" aria-hidden="true"></span>
+        <span class="igr__stats" aria-hidden="true"><span>${r.views ? '▶ ' + fmt(r.views) : ''}</span><span>${quando(r.data)}</span></span></span>
+        ${r.legenda ? `<span class="igr__cap">${esc(r.legenda)}</span>` : ''}</button></li>`).join('');
+      row.removeAttribute('aria-busy');
+      $$('.igr__card', row).forEach(b => b.addEventListener('click', () => abrir(reels[+b.dataset.i])));
+      arrows();
+    };
+    const io = new IntersectionObserver(es => {
+      if (!es.some(e => e.isIntersecting)) return;
+      io.disconnect();
+      fetch('reels/reels.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : Promise.reject())
+        .then(render).catch(() => { igr.hidden = true; });
+    }, { rootMargin: '800px 0px' });
+    io.observe(igr);
+  }
+
   $('#yr').textContent = new Date().getFullYear();
 })();
